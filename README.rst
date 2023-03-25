@@ -73,5 +73,9 @@ Examples
 
 A light screenshot
 
+.. image:: assets/example_light.png
+
 A dark screenshot
+
+.. image:: assets/example_dark.png
 

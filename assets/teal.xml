@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+<!ENTITY HEX "[0-9A-Fa-f]">
+<!ENTITY IDS "[a-zA-Z_][a-zA-Z0-9_]*">
+<!ENTITY IDSEXT "[a-zA-Z_][a-zA-Z0-9_]*[\.]?">
+]>
+<!--
+    Teal (https://github.com/teal-language) syntax highlighting for Kate
+
+    based on: LUA (www.lua.org) syntax highlighting for Kate
+
+    CHANGES
+
+    [ Version 1.00 (2023-03-08) by JLPlabs ]
+
+    - first attempt
+
+-->
+<language name="Teal" version="20" indenter="lua" kateversion="5.79" section="Scripts" extensions="*.tl" mimetype="text/x-teal">
+  <highlighting>
+
+    <list name="declarations">
+      <item>local</item>
+      <item>global</item>
+    </list>
+
+    <list name="tealkeywords">
+      <item>enum</item>
+      <item>record</item>
+    </list>
+
+    <contexts>
+
+      <context name="Normal Text" attribute="Normal" lineEndContext="#stay" >
+        <IncludeRules context="Short Comment" />
+        <IncludeRules context="Strings" />
+
+        <!-- 'local' or 'global' declarations --> 
+        <keyword      context="Declarations" String="declarations" attribute="Normal" />
+
+        <!-- 'function' occurring without being preceded by 'local' or 'global' means record method --> 
+        <RegExpr context="MethodDecl"  lookAhead="true" String="\b(function)\s*(.*)\("/>
+      </context>
+
+
+
+      <context name="Short Comment" attribute="Comment" lineEndContext="#pop" >
+        <Detect2Chars attribute="Comment" char="-" char1="-" context="Short Comment" />
+      </context>
+
+
+
+      <context name="Strings" attribute="String" lineEndContext="#stay" >
+        <RegExpr      attribute="String"  context="String_block"  String="\[(=*)\[" />
+        <DetectChar   attribute="String"  context="String_single" char="'"/>
+        <DetectChar   attribute="String"  context="String_double" char="&quot;"/>
+      </context>
+
+      <context name="String_block"  attribute="String"  lineEndContext="#stay" dynamic="true">
+        <StringDetect attribute="String"    context="#pop"  String="]%1]" dynamic="true" />
+      </context>
+
+      <context name="String_single" attribute="String"     lineEndContext="Error">
+        <DetectChar   attribute="String"  context="Special_char"  char="\" lookAhead="true"/>
+        <DetectChar   attribute="String"  context="#pop"  char="'"/>
+      </context>
+
+      <context name="String_double" attribute="String"     lineEndContext="Error">
+        <DetectChar   attribute="String"  context="Special_char"  char="\" lookAhead="true"/>
+        <DetectChar   attribute="String"  context="#pop"  char="&quot;"/>
+      </context>
+
+      <context name="Special_char"  attribute="Error"       lineEndContext="#pop">
+        <LineContinue attribute="Special Char" context="#pop" />
+        <Detect2Chars attribute="Special Char" context="Special_char_\z" char="\" char1="z" lookAhead="true"/>
+        <RegExpr      attribute="Groupers" context="#pop" String="\\(?:[abfnrtv'&quot;\\\[\]]|x&HEX;&HEX;|\d{1,3}|u\{&HEX;{1,6}\})"/>
+        <DetectChar   attribute="Error"        context="#pop" char="\"/>
+      </context>
+
+      <context name="Special_char_\z" attribute="Special Char" lineEndContext="#stay">
+        <LineContinue attribute="Special Char" context="#pop#pop" char="z"/>
+        <DetectChar   attribute="Special Char" context="#pop#pop" char="z"/>
+      </context>
+
+      <context name="String_block"  attribute="String"  lineEndContext="#stay" dynamic="true">
+        <StringDetect attribute="String"    context="#pop"  String="]%1]" dynamic="true" />
+      </context>
+
+
+
+
+      <!-- got 'local' or 'global' to get here -->
+      <context name="Declarations" attribute="Normal" lineEndContext="#stay" fallthroughContext="Normal Text" >
+        <DetectSpaces />
+        <!-- discern 'record' as teal keyword -->
+        <RegExpr context="RecordDecl"     lookAhead="true" String="\b(record|enum)\s*([a-zA-Z_][a-zA-Z0-9_]*)"/>
+        <RegExpr context="RecordDeclLong" lookAhead="true" String="\btype\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(record|enum)"/>
+
+        <!-- discern teal keywords used as identifiers 'record' and 'enum'; weird, but legal -->
+        <RegExpr context="Identifier"  lookAhead="true" String="(record|enum)\s*=" />
+        <RegExpr context="Identifier"  lookAhead="true" String="(record|enum)\s*:" />
+
+        <!-- discern 'function' as lua keyword -->
+        <RegExpr context="FunctionDecl" lookAhead="true" String="\b(function)\s*([a-zA-Z_][a-zA-Z0-9_]*)"/>
+
+        <!-- discern more common declarations: 'ID=' or 'ID:TYPE'  or 'ID<attr>' -->
+        <RegExpr context="Identifier"   lookAhead="true" String="(&IDS;)\s*(=|:|&lt;)" />
+      </context>
+
+
+
+      <!-- local record|enum ID -->
+      <context name="RecordDecl" attribute="Normal Text" lineEndContext="RecordBody" >
+        <StringDetect context="#stay" attribute="Normal" String="%1" dynamic="true"/>
+        <StringDetect context="RecordBody" attribute="Variable" String="%2" dynamic="true"/>
+      </context>
+
+      <!-- local type ID = record|enum -->
+      <context name="RecordDeclLong" attribute="Normal Text" lineEndContext="#pop" >
+        <StringDetect context="#stay" attribute="Variable" String="%1" dynamic="true"/>
+        <StringDetect context="RecordBody" attribute="Normal" String="%2" dynamic="true"/>
+      </context>
+
+      <!-- local function ID -->
+      <context name="FunctionDecl" attribute="Normal Text" lineEndContext="#pop" >
+        <StringDetect context="#stay" attribute="Normal" String="%1" dynamic="true"/>
+        <StringDetect context="#pop"  attribute="Variable" String="%2" dynamic="true"/>
+      </context>
+
+      <!-- local ID:TYPE = ...   or   local ID = ...   -->
+      <context name="Identifier" attribute="Normal Text" lineEndContext="#pop" >
+        <StringDetect context="#pop" attribute="Variable" String="%1" dynamic="true"/>
+      </context>
+
+      <!-- record body: set identifier highlight -->
+      <context name="RecordBody" attribute="Normal Text" lineEndContext="#stay" >
+        <RegExpr      attribute="Comment"  context="#stay"  String="--(.*$)" />
+        <RegExpr context="RecordBodyDecl" lookAhead="true" String="\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:"/>
+        <StringDetect context="#pop#pop#pop" attribute="Normal" String="end" dynamic="true"/>
+      </context>
+
+      <!-- ID:TYPE   or   ID: function ...   -->
+      <context name="RecordBodyDecl" attribute="Normal Text" lineEndContext="#pop" >
+        <StringDetect context="#pop" attribute="FieldMethod" String="%1" dynamic="true"/>
+      </context>
+
+
+      <!-- record method -->
+      <context name="MethodDecl" attribute="Normal Text" lineEndContext="#pop" >
+      <StringDetect context="#stay" attribute="Normal" String="%1" dynamic="true"/>
+        <!-- <StringDetect context="#pop" attribute="FieldMethod" String="%2" dynamic="true"/>  -->
+      <StringDetect context="#pop" attribute="Normal Text" String="%2" dynamic="true"/>
+      </context>
+
+
+
+
+
+
+      <context name="Func Decl" attribute="Variable" lineEndContext="#stay" fallthroughContext="Normal Text" >
+        <RegExpr    String="\s*(&IDSEXT;)" attribute="Variable" context="#stay" />
+        <DetectChar Char="(" attribute="Normal" context="#pop" />
+      </context>
+
+
+
+
+      <context name="Record Block Start" attribute="Normal" lineEndContext="#stay" >
+        <DetectSpaces />
+        <keyword attribute="Keyword" context="Record Block" String="tealkeywords" lookahead="true" />
+
+      </context>
+
+      <!-- form2: local record <id> -->
+        <context name="Record Block 2 Start" attribute="Normal" lineEndContext="#stay" >
+          <RegExpr    String="\s*(&IDS;)" attribute="Variable" context="Record Block" />
+      </context>
+
+
+      <context name="Record Block" attribute="Normal" lineEndContext="#stay" >
+        <keyword attribute="Keyword" context="Record Block" String="tealkeywords"  />
+        <!-- fields and methods -->
+        <RegExpr String="^\s*(?:[a-zA-Z_][a-zA-Z0-9_]*)\s*:" attribute="FieldMethod" context="#stay" /> 
+
+        <IncludeRules context="Short Comment" />
+
+        <!-- 'end' to get out of record block and record block start -->
+        <WordDetect attribute="Normal" context="Normal Text" String="end" />
+      </context>
+
+
+
+
+      <context name="Function Block" attribute="Record" lineEndContext="#stay" >
+        <WordDetect String="function" attribute="Record" context="#stay" />
+        <!-- 
+        <IncludeRules context="Function Signature" />
+        <IncludeRules context="Function Body" />
+        -->
+        <IncludeRules context="Short Comment" />
+        <WordDetect String="return" attribute="Record" context="#stay" />
+        <WordDetect String="end" attribute="Record" context="#pop" />
+
+      </context>
+
+
+
+      <context name="Function Signature" attribute="Normal" lineEndContext="#stay" >
+        <IncludeRules context="Short Comment" />
+        <IncludeRules context="Function Name" />
+        <IncludeRules context="Function Args" />
+      </context>
+
+
+
+      <context name="Function Name" attribute="Normal" lineEndContext="#stay" >
+        <RegExpr String="&IDS;" attribute="Function" context="#stay" />
+      </context>
+
+
+
+      <context name="Function Args" attribute="Normal" lineEndContext="#stay" >
+        <DetectChar char="(" attribute="Groupers" context="#stay" />
+        <IncludeRules context="Short Comment" />
+        <IncludeRules context="Function Arg Name" />
+        <IncludeRules context="Function Arg Type" />
+        <DetectChar char=")" attribute="Groupers" context="#pop" />
+      </context>
+
+
+
+      <context name="Function Arg Name" attribute="Normal" lineEndContext="#stay" >
+        <RegExpr String="&IDS;" attribute="Normal" context="#stay" />
+        <DetectChar char=":" attribute="Normal" context="#stay" />
+        <RegExpr String=",\\s*&IDS;" attribute="Normal" context="#stay" />
+        <DetectChar char=":" attribute="Normal" context="#stay" />
+      </context>
+
+
+
+      <context name="Function Arg Type" attribute="Type" lineEndContext="#stay" >
+        <DetectIdentifier attribute="Type" context="#pop" />
+      </context>
+
+
+
+      <context name="Function Body" attribute="Normal" lineEndContext="#stay" >
+        <WordDetect String="end" attribute="Record" context="#pop"  />
+      </context>
+
+
+
+      <context name="xxxx" attribute="normal" lineendcontext="#pop" >
+        <WordDetect attribute="Record" context="Record Block" String="record" />
+      </context>
+
+
+
+
+      <context name="Type" attribute="Type" lineEndContext="#pop" >
+        <DetectSpaces attribute="Normal" context="#stay" />
+
+        <!-- table-type ("table-type") -->
+
+        <!-- type-name ("type-name") -->
+        <IncludeRules context="Type Name" />
+      </context>
+
+
+
+      <context name="Type Name" attribute="Type" lineEndContext="#pop" >
+        <!-- variable type ("type") -->
+        <RegExpr String="(?:[a-zA-Z_][a-zA-Z0-9_]*)" attribute="Type" context="#pop" />
+      </context>
+
+
+
+
+      <context name="Table Type" attribute="Normal" lineEndContext="#pop" >
+        <RegExpr String="(?:[a-zA-Z_][a-zA-Z0-9_]*)" attribute="Type" context="#stay" />
+      </context>
+
+      <context name="Error"         attribute="Error"       lineEndContext="#stay">
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal"           defStyleNum="dsNormal" />
+      <itemData name="FieldMethod"      defStyleNum="dsAttribute" />
+      <itemData name="Variable"         defStyleNum="dsVariable" />
+      <itemData name="Comment"           defStyleNum="dsComment" />
+      <itemData name="String"           defStyleNum="dsString" />
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="--" />
+      <comment name="multiLine" start="--[[" end="]]" region="BlockComment" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="." additionalDeliminator="'&quot;#"/>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->
+
