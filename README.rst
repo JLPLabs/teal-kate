@@ -74,7 +74,6 @@ Examples
 A light screenshot
 
 .. image:: assets/example_light.png
-   :scale: 10 %
 
 A dark screenshot
 
