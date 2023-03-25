@@ -4,8 +4,8 @@ teal-kate
 Abstract
 --------
 
-Extremely rudimentary Kate syntax xml for Teal (a typed dialect of Lua)
-`<https://github.com/teal-language`_ 
+Extremely rudimentary Kate syntax xml for Teal, a typed dialect of Lua.
+`<https://github.com/teal-language>`_ 
 
 Also included are two pandoc themes -- one light and one dark.
 
@@ -21,7 +21,7 @@ Overview
 --------
 
 The author is working on a blog series covering their experiences with Teal and
-Cyan `<https://github.com/teal-language/cyan>`_, and an intentionally simple
+Cyan (`<https://github.com/teal-language/cyan>`_), and an intentionally simple
 tool chain is being used to support this effort:
 
 * ReStructured Text files (.rst)
